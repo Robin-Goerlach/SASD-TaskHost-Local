@@ -37,6 +37,9 @@ public sealed class MainForm : Form
         LoadLists();
     }
 
+    /// <summary>
+    /// Baut die grundlegende Fensterstruktur auf.
+    /// </summary>
     private void BuildUi()
     {
         var menu = BuildMenu();
@@ -64,6 +67,10 @@ public sealed class MainForm : Form
         BuildTaskPanel(split.Panel2);
     }
 
+    /// <summary>
+    /// Baut die Menüleiste des Hauptfensters auf.
+    /// </summary>
+    /// <returns>Die fertig konfigurierte Menüleiste.</returns>
     private MenuStrip BuildMenu()
     {
         var menu = new MenuStrip();
@@ -88,12 +95,22 @@ public sealed class MainForm : Form
         helpMenu.DropDownItems.Add("Über TaskHost Local", null, (_, _) => ShowAbout());
 
         menu.Items.AddRange(new ToolStripItem[] { fileMenu, listMenu, taskMenu, helpMenu });
+
         return menu;
     }
 
+    /// <summary>
+    /// Baut den linken Listenbereich des Hauptfensters auf.
+    /// </summary>
+    /// <param name="parent">Das übergeordnete Steuerelement, in das der Bereich eingefügt wird.</param>
     private void BuildListPanel(Control parent)
     {
-        var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        var panel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(8)
+        };
+
         parent.Controls.Add(panel);
 
         var label = new Label
@@ -103,34 +120,59 @@ public sealed class MainForm : Form
             Height = 28,
             Font = new Font(Font, FontStyle.Bold)
         };
+
         panel.Controls.Add(label);
 
-        var buttonPanel = new FlowLayoutPanel
+        var buttonPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Bottom,
-            Height = 82,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true
+
+            // Drei Listen-Buttons werden links bewusst untereinander angeordnet.
+            // Das verhindert, dass Buttons bei schmaler linker Spalte abgeschnitten werden.
+            Height = 108,
+            ColumnCount = 1,
+            RowCount = 3
         };
+
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        buttonPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+        buttonPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+        buttonPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 33.34F));
+
         panel.Controls.Add(buttonPanel);
 
-        buttonPanel.Controls.Add(CreateButton("+ Liste", AddList));
-        buttonPanel.Controls.Add(CreateButton("Umbenennen", RenameList));
-        buttonPanel.Controls.Add(CreateButton("Löschen", DeleteList));
+        buttonPanel.Controls.Add(CreateListButton("+ Liste", AddList), 0, 0);
+        buttonPanel.Controls.Add(CreateListButton("Umbenennen", RenameList), 0, 1);
+        buttonPanel.Controls.Add(CreateListButton("Löschen", DeleteList), 0, 2);
 
         _lstLists.Dock = DockStyle.Fill;
         _lstLists.DisplayMember = nameof(TaskList.Name);
         _lstLists.SelectedIndexChanged += (_, _) => LoadTasksForCurrentSelection();
+
         panel.Controls.Add(_lstLists);
         _lstLists.BringToFront();
     }
 
+    /// <summary>
+    /// Baut den rechten Aufgabenbereich des Hauptfensters auf.
+    /// </summary>
+    /// <param name="parent">Das übergeordnete Steuerelement, in das der Bereich eingefügt wird.</param>
     private void BuildTaskPanel(Control parent)
     {
-        var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        var panel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(8)
+        };
+
         parent.Controls.Add(panel);
 
-        var searchPanel = new Panel { Dock = DockStyle.Top, Height = 38 };
+        var searchPanel = new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 38
+        };
+
         panel.Controls.Add(searchPanel);
 
         var searchLabel = new Label
@@ -140,6 +182,7 @@ public sealed class MainForm : Form
             Top = 9,
             Width = 55
         };
+
         searchPanel.Controls.Add(searchLabel);
 
         _txtSearch.Left = 60;
@@ -147,6 +190,7 @@ public sealed class MainForm : Form
         _txtSearch.Width = 320;
         _txtSearch.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;
         _txtSearch.TextChanged += (_, _) => LoadTasksForCurrentSelection();
+
         searchPanel.Controls.Add(_txtSearch);
 
         var clearSearchButton = new Button
@@ -158,7 +202,9 @@ public sealed class MainForm : Form
             Top = 4,
             Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
+
         clearSearchButton.Click += (_, _) => _txtSearch.Clear();
+
         searchPanel.Controls.Add(clearSearchButton);
 
         var buttonPanel = new FlowLayoutPanel
@@ -168,6 +214,7 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false
         };
+
         panel.Controls.Add(buttonPanel);
 
         buttonPanel.Controls.Add(CreateButton("+ Aufgabe", AddTask));
@@ -192,6 +239,9 @@ public sealed class MainForm : Form
         _gridTasks.BringToFront();
     }
 
+    /// <summary>
+    /// Konfiguriert die Spalten der Aufgabentabelle.
+    /// </summary>
     private void ConfigureTaskGridColumns()
     {
         _gridTasks.Columns.Clear();
@@ -232,6 +282,12 @@ public sealed class MainForm : Form
         });
     }
 
+    /// <summary>
+    /// Erstellt einen Standard-Button für die untere Aufgabenleiste.
+    /// </summary>
+    /// <param name="text">Der sichtbare Button-Text.</param>
+    /// <param name="action">Die Aktion, die beim Klick ausgeführt werden soll.</param>
+    /// <returns>Ein Button für die Aufgabenleiste.</returns>
     private static Button CreateButton(string text, Action action)
     {
         var button = new Button
@@ -241,7 +297,32 @@ public sealed class MainForm : Form
             Height = 30,
             Margin = new Padding(3)
         };
+
         button.Click += (_, _) => action();
+
+        return button;
+    }
+
+    /// <summary>
+    /// Erstellt einen Button für die linke Listenleiste.
+    /// </summary>
+    /// <param name="text">Der sichtbare Button-Text.</param>
+    /// <param name="action">Die Aktion, die beim Klick ausgeführt werden soll.</param>
+    /// <returns>Ein für die Listenleiste formatierter Button.</returns>
+    private static Button CreateListButton(string text, Action action)
+    {
+        var button = new Button
+        {
+            Text = text,
+
+            // Der Button füllt die Breite der linken Spalte.
+            // Dadurch wird er nicht mehr durch eine feste Pixelbreite abgeschnitten.
+            Dock = DockStyle.Fill,
+            Margin = new Padding(3)
+        };
+
+        button.Click += (_, _) => action();
+
         return button;
     }
 
@@ -249,11 +330,16 @@ public sealed class MainForm : Form
 
     private TaskItem? SelectedTask => _gridTasks.CurrentRow?.DataBoundItem as TaskItem;
 
+    /// <summary>
+    /// Lädt die vorhandenen Listen neu und wählt optional eine bevorzugte Liste aus.
+    /// </summary>
+    /// <param name="preferredListId">Optionale ID der Liste, die nach dem Laden ausgewählt werden soll.</param>
     private void LoadLists(long? preferredListId = null)
     {
         try
         {
             var lists = _listService.GetAllLists();
+
             _lstLists.DataSource = null;
             _lstLists.DataSource = lists;
 
@@ -275,11 +361,15 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Lädt die Aufgaben für die aktuell ausgewählte Liste oder führt eine Suche aus.
+    /// </summary>
     private void LoadTasksForCurrentSelection()
     {
         try
         {
             var searchText = _txtSearch.Text.Trim();
+
             List<TaskItem> tasks;
 
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -307,9 +397,13 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Öffnet den Dialog zum Anlegen einer neuen Liste.
+    /// </summary>
     private void AddList()
     {
         using var form = new ListEditForm("Neue Liste");
+
         if (form.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -326,6 +420,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Öffnet den Dialog zum Umbenennen der aktuell ausgewählten Liste.
+    /// </summary>
     private void RenameList()
     {
         if (SelectedList is not TaskList list)
@@ -334,6 +431,7 @@ public sealed class MainForm : Form
         }
 
         using var form = new ListEditForm("Liste umbenennen", list.Name);
+
         if (form.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -350,6 +448,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Löscht die aktuell ausgewählte Liste, sofern der Service dies zulässt.
+    /// </summary>
     private void DeleteList()
     {
         if (SelectedList is not TaskList list)
@@ -380,6 +481,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Öffnet den Dialog zum Anlegen einer neuen Aufgabe.
+    /// </summary>
     private void AddTask()
     {
         if (SelectedList is not TaskList list)
@@ -397,6 +501,7 @@ public sealed class MainForm : Form
         };
 
         using var form = new TaskEditForm(task);
+
         if (form.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -413,6 +518,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Öffnet den Dialog zum Bearbeiten der aktuell ausgewählten Aufgabe.
+    /// </summary>
     private void EditTask()
     {
         if (SelectedTask is not TaskItem task)
@@ -436,6 +544,7 @@ public sealed class MainForm : Form
         };
 
         using var form = new TaskEditForm(editableTask);
+
         if (form.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -452,6 +561,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Löscht die aktuell ausgewählte Aufgabe nach einer Sicherheitsabfrage.
+    /// </summary>
     private void DeleteTask()
     {
         if (SelectedTask is not TaskItem task)
@@ -482,6 +594,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Schaltet den Erledigt-Status der aktuell ausgewählten Aufgabe um.
+    /// </summary>
     private void ToggleTaskCompleted()
     {
         if (SelectedTask is not TaskItem task)
@@ -500,6 +615,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Erstellt eine Datenbanksicherung im vom Benutzer ausgewählten Ordner.
+    /// </summary>
     private void BackupDatabase()
     {
         using var dialog = new FolderBrowserDialog
@@ -523,6 +641,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// Zeigt den einfachen Über-Dialog an.
+    /// </summary>
     private void ShowAbout()
     {
         MessageBox.Show(
@@ -533,6 +654,11 @@ public sealed class MainForm : Form
             MessageBoxIcon.Information);
     }
 
+    /// <summary>
+    /// Zeigt eine einheitliche Fehlermeldung an.
+    /// </summary>
+    /// <param name="message">Benutzerfreundliche Fehlermeldung.</param>
+    /// <param name="exception">Die technische Ausnahme mit Detailinformationen.</param>
     private void ShowError(string message, Exception exception)
     {
         MessageBox.Show(
