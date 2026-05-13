@@ -1,11 +1,22 @@
 # TaskHost Local – Technical Design
 
-**Dokumentstatus:** Arbeitsfassung  
+**Dokumentstatus:** Arbeitsfassung v0.2  
 **Stand:** 2026-05-13  
+**Bezug:** Lastenheft/Pflichtenheft MVP v0.2
 
 ## 1. Zweck des Dokuments
 
-Dieses Dokument beschreibt den technischen Aufbau von **TaskHost Local**. Es dient als Orientierung für Implementierung, Debugging und spätere Weiterentwicklung.
+Dieses Dokument beschreibt den technischen Aufbau von **TaskHost Local**.
+
+Es dient als Orientierung für:
+
+- Implementierung,
+- Debugging,
+- Code-Reviews,
+- spätere Weiterentwicklung,
+- Abgleich mit Lastenheft und Pflichtenheft.
+
+Temporäre Laufzeitfehler werden nicht dauerhaft in diesem Dokument gepflegt. Sie gehören nach `080_Known_Issues.md`.
 
 ## 2. Technisches Ziel
 
@@ -13,12 +24,13 @@ Das technische Ziel der ersten Version ist eine einfache, lokal lauffähige Wind
 
 Wichtige Ziele:
 
-- schnelle lokale Nutzbarkeit
-- verständlicher Code
-- einfache Architektur
-- klare Trennung von UI und Datenbankzugriff
-- spätere Erweiterbarkeit
-- kein unnötiger Framework-Ballast
+- schnelle lokale Nutzbarkeit,
+- verständlicher Code,
+- einfache Architektur,
+- klare Trennung von UI und Datenbankzugriff,
+- spätere Erweiterbarkeit,
+- kein unnötiger Framework-Ballast,
+- keine Netzwerkkommunikation im MVP.
 
 ## 3. Technologie-Stack
 
@@ -29,8 +41,9 @@ Wichtige Ziele:
 | UI | Windows Forms |
 | Datenbank | SQLite |
 | Datenbankbibliothek | Microsoft.Data.Sqlite |
+| ORM | keines |
 | Build | .NET SDK / Visual Studio |
-| Zielplattform | Windows |
+| Zielplattform MVP | Windows |
 | Repository | GitHub |
 
 ## 4. Architekturprinzipien
@@ -41,13 +54,13 @@ Die Anwendung wird in einfache logische Schichten getrennt:
 
 ```text
 UI / Forms
-   ↓
+    ↓
 Services
-   ↓
+    ↓
 Repositories
-   ↓
+    ↓
 Database
-   ↓
+    ↓
 SQLite
 ```
 
@@ -63,9 +76,9 @@ Formulare sollen Dienste aufrufen. SQL gehört ausschließlich in Repositories.
 
 Das MVP soll nicht durch zu viele Projekte, Interfaces oder Frameworks verlangsamt werden.
 
-Für V1 genügt ein einzelnes WinForms-Projekt mit klaren Ordnern. Eine spätere Aufteilung in mehrere Projekte bleibt möglich.
+Für V1 genügt ein einzelnes WinForms-Projekt mit klaren Ordnern.
 
-Mögliche spätere Struktur:
+Eine spätere Aufteilung in mehrere Projekte bleibt möglich:
 
 ```text
 TaskHostLocal.Core
@@ -75,6 +88,21 @@ TaskHostLocal.Tests
 TaskHostLocal.Sync.TaskHostApi
 ```
 
+Diese Aufteilung soll aber erst erfolgen, wenn der Nutzen größer ist als die zusätzliche Komplexität.
+
+### 4.4 Offline-first im MVP
+
+Das MVP ist vollständig lokal.
+
+Es darf im MVP nicht enthalten:
+
+- HTTP-Client für TaskHost,
+- API-Anbindung,
+- Telemetrie,
+- automatische Update-Prüfung,
+- Hintergrunddienst für Synchronisierung,
+- Netzwerkkommunikation zur Laufzeit.
+
 ## 5. Hauptkomponenten
 
 ### 5.1 Program.cs
@@ -83,8 +111,9 @@ Startpunkt der Anwendung.
 
 Aufgaben:
 
-- WinForms-Anwendung initialisieren
-- `MainForm` starten
+- WinForms-Anwendung initialisieren,
+- Anwendungskonfiguration vorbereiten,
+- `MainForm` starten.
 
 ### 5.2 MainForm.cs
 
@@ -92,18 +121,20 @@ Hauptfenster der Anwendung.
 
 Aufgaben:
 
-- Menü und Toolbar aufbauen
-- linke Navigation anzeigen
-- Aufgaben anzeigen
-- Benutzeraktionen entgegennehmen
-- Services aufrufen
-- UI nach Änderungen aktualisieren
+- Menü und Toolbar aufbauen,
+- linke Navigation anzeigen,
+- Aufgaben anzeigen,
+- Benutzeraktionen entgegennehmen,
+- Services aufrufen,
+- UI nach Änderungen aktualisieren,
+- Fehlermeldungen verständlich anzeigen.
 
 Nicht-Aufgaben:
 
-- SQL ausführen
-- Datenbankverbindungen öffnen
-- tiefe Geschäftslogik enthalten
+- SQL ausführen,
+- Datenbankverbindungen öffnen,
+- tiefe Geschäftslogik enthalten,
+- direkte Dateisystemlogik für Backups enthalten.
 
 ### 5.3 Forms/TaskEditForm.cs
 
@@ -111,9 +142,10 @@ Dialog oder Bearbeitungsformular für Aufgaben.
 
 Aufgaben:
 
-- Eingabefelder für Titel, Notiz, Fälligkeit, Priorität bereitstellen
-- Eingaben validieren oder an Service übergeben
-- Ergebnis an MainForm zurückgeben
+- Eingabefelder für Titel, Notiz, Fälligkeit und Priorität bereitstellen,
+- Eingaben plausibilisieren,
+- Ergebnis an MainForm bzw. Service zurückgeben,
+- keine SQL-Operationen ausführen.
 
 ### 5.4 Forms/ListEditForm.cs
 
@@ -121,8 +153,9 @@ Dialog für Listen.
 
 Aufgaben:
 
-- Listennamen erfassen
-- leere Namen verhindern
+- Listennamen erfassen,
+- leere Namen verhindern,
+- keine SQL-Operationen ausführen.
 
 ### 5.5 Models
 
@@ -130,8 +163,8 @@ Models repräsentieren fachliche Datenobjekte.
 
 Wichtige Models:
 
-- `TaskItem`
-- `TaskList`
+- `TaskItem`,
+- `TaskList`.
 
 Diese Klassen sollten möglichst wenig Logik enthalten und als verständliche Datenstrukturen dienen.
 
@@ -141,11 +174,17 @@ Services enthalten fachliche Operationen.
 
 Beispiele:
 
-- `TaskService`
-- `ListService`
-- `BackupService`
+- `TaskService`,
+- `ListService`,
+- `BackupService`.
 
-Services koordinieren Repositories und enthalten einfache Regeln.
+Services koordinieren Repositories und enthalten einfache Regeln, zum Beispiel:
+
+- Titel darf nicht leer sein,
+- Liste mit Aufgaben darf im MVP nicht gelöscht werden,
+- Priorität muss in einem gültigen Bereich liegen,
+- beim Erledigen wird `completed_at` gesetzt,
+- beim Wiederöffnen wird `completed_at` zurückgesetzt.
 
 ### 5.7 Repositories
 
@@ -153,10 +192,16 @@ Repositories kapseln Datenbankzugriff.
 
 Beispiele:
 
-- `TaskRepository`
-- `ListRepository`
+- `TaskRepository`,
+- `ListRepository`.
 
-Repositories verwenden parametrisierte SQL-Abfragen und mappen Datenbankzeilen auf Models.
+Repositories verwenden:
+
+- parametrisierte SQL-Abfragen,
+- nachvollziehbare Query-Methoden,
+- eindeutiges Mapping von Datenbankzeilen auf Models.
+
+Repositories sollen keine UI-Logik enthalten.
 
 ### 5.8 Database
 
@@ -164,8 +209,16 @@ Database-Klassen sind für Datenbankpfad, Verbindung und Initialisierung zustän
 
 Beispiele:
 
-- `DbConnectionFactory`
-- `DatabaseInitializer`
+- `DbConnectionFactory`,
+- `DatabaseInitializer`.
+
+Aufgaben:
+
+- AppData-Pfad bestimmen,
+- Verzeichnis anlegen,
+- SQLite-Verbindung erzeugen,
+- Tabellen initialisieren,
+- Standardliste sicherstellen.
 
 ## 6. Datenbankort
 
@@ -180,26 +233,29 @@ Empfohlener Pfad:
 Beispiel:
 
 ```text
-C:\Users\<User>\AppData\Roaming\SASD\TaskHostLocal\taskhost.db
+C:\Users\<Benutzername>\AppData\Roaming\SASD\TaskHostLocal\taskhost.db
 ```
 
 Vorteile:
 
-- keine Adminrechte erforderlich
-- Daten bleiben bei Programmupdates erhalten
-- klarer Speicherort
-- einfache Backupmöglichkeit
+- keine Adminrechte erforderlich,
+- Daten bleiben bei Programmupdates erhalten,
+- klarer Speicherort,
+- einfache Backupmöglichkeit,
+- benutzerspezifische Datenhaltung.
 
 ## 7. Datenbankinitialisierung
 
 Beim Start der Anwendung soll `DatabaseInitializer` sicherstellen:
 
-- AppData-Verzeichnis existiert
-- SQLite-Datei existiert
-- Tabellen existieren
-- Standardliste existiert
+- AppData-Verzeichnis existiert,
+- SQLite-Datei existiert,
+- Tabellen existieren,
+- Standardliste „Eingang“ existiert.
 
-Initialisierung muss idempotent sein. Mehrfaches Starten darf keine Duplikate erzeugen.
+Initialisierung muss idempotent sein.
+
+Mehrfaches Starten darf keine Duplikate erzeugen.
 
 ## 8. SQL-Strategie
 
@@ -207,17 +263,63 @@ Für das MVP wird direktes SQL verwendet.
 
 Regeln:
 
-- SQL nur in Repository-Klassen
-- Parameterbindung statt Stringverkettung
-- `CREATE TABLE IF NOT EXISTS` für Initialisierung
-- ISO-ähnliche Datumswerte als Text speichern
-- Booleans als Integer speichern (`0`/`1`)
+- SQL nur in Repository-Klassen,
+- Parameterbindung statt Stringverkettung für Werte,
+- keine dynamischen WHERE-Klauseln ohne saubere Prüfung,
+- `CREATE TABLE IF NOT EXISTS` für Initialisierung,
+- ISO-nahe Datumswerte als Text speichern,
+- Booleans als Integer speichern (`0`/`1`),
+- Smart Views als definierte Abfragen umsetzen, nicht als Datenbanklisten.
 
-## 9. Fehlerbehandlung
+### 8.1 Dynamische Filter
+
+Dynamische Filter sind eine typische Fehlerquelle.
+
+Für Suche und Smart Views gilt:
+
+- WHERE-Bedingungen dürfen nicht mit leerem Spaltennamen erzeugt werden.
+- Optionale Bedingungen müssen kontrolliert zusammengesetzt werden.
+- Leerer Suchtext muss eine gültige Abfrage erzeugen.
+- Kein Code darf SQL-Fragmente wie `WHERE = ...` oder `AND = ...` erzeugen.
+
+## 9. Datenmodell-Kurzfassung
+
+MVP-Tabellen:
+
+```text
+task_lists
+- id
+- name
+- sort_order
+- created_at
+- updated_at
+
+tasks
+- id
+- list_id
+- title
+- description
+- due_date
+- priority
+- is_completed
+- created_at
+- updated_at
+- completed_at
+```
+
+Wichtige Regeln:
+
+- Jede Aufgabe gehört genau zu einer echten Liste.
+- „Eingang“ ist eine echte Liste.
+- Smart Views sind gefilterte Ansichten.
+- Favoriten benötigen später `is_starred`.
+- Unteraufgaben, Tags, Anhänge und Erinnerungen gehören nicht ins MVP.
+
+## 10. Fehlerbehandlung
 
 Fehler werden in der UI verständlich angezeigt.
 
-Beispielstruktur:
+Beispiel:
 
 ```text
 Die Aufgaben konnten nicht geladen werden.
@@ -226,9 +328,24 @@ Details:
 SQLite Error 1: near "=": syntax error.
 ```
 
-Für die spätere Entwicklung wäre optional eine einfache Logging-Komponente sinnvoll, aber nicht zwingend im MVP.
+Für Entwickler soll die technische Detailmeldung sichtbar bleiben, damit frühe Fehler schnell analysiert werden können.
 
-## 10. Build und Start
+Später kann eine einfache Logging-Komponente ergänzt werden. Für das MVP ist Logging hilfreich, aber nicht zwingend.
+
+## 11. Backup
+
+Die Backup-Funktion soll die aktuelle SQLite-Datenbankdatei kopieren.
+
+Anforderungen:
+
+- Backup-Dateiname soll Datum/Uhrzeit enthalten.
+- Zielpfad soll für den Benutzer nachvollziehbar sein.
+- Backup darf nicht automatisch ins Repository gelangen.
+- Backup ist kein fachlicher Export.
+
+Ein JSON-Export/Import ist eine spätere Erweiterung.
+
+## 12. Build und Start
 
 Typische Befehle:
 
@@ -238,68 +355,79 @@ dotnet build
 dotnet run --project .\TaskHostLocal.WinForms\TaskHostLocal.WinForms.csproj
 ```
 
-Für Windows Forms sollte der Start bevorzugt unter Windows erfolgen, nicht aus WSL heraus.
+Für Windows Forms sollte der Start bevorzugt unter Windows erfolgen, nicht primär aus WSL heraus.
 
-## 11. Bekannter technischer Fehler
-
-Aktueller Laufzeitfehler:
-
-```text
-SQLite Error 1: near "=": syntax error.
-```
-
-Wahrscheinliche Ursache:
-
-- fehlerhaft zusammengesetztes SQL in `TaskRepository`
-- möglicherweise ungültige WHERE-Bedingung bei optionalen Filtern
-- möglicherweise Syntax wie `WHERE = ...` oder `AND = ...`
-
-Vorgehen zur Behebung:
-
-1. SQL-Statements in `TaskRepository` prüfen.
-2. Query bei leerem Suchbegriff prüfen.
-3. Query bei ausgewählter Liste prüfen.
-4. Parameter und zusammengesetzte WHERE-Bedingungen prüfen.
-5. Minimalen Test mit Standardliste und leerer Aufgabenliste durchführen.
-
-## 12. Öffentliche Repository-Nutzung
+## 13. Öffentliche Repository-Nutzung
 
 Da das Repository öffentlich ist, gelten technische Schutzregeln:
 
-- `.db`-Dateien ignorieren
-- Backup-Dateien ignorieren
-- `bin/` und `obj/` ignorieren
-- keine echten Aufgaben oder persönlichen Daten einchecken
-- keine Secrets einchecken
+- `.db`-Dateien ignorieren,
+- Backup-Dateien ignorieren,
+- `bin/` und `obj/` ignorieren,
+- keine echten Aufgaben oder persönlichen Daten einchecken,
+- keine Secrets einchecken,
+- Screenshots nur mit fiktiven Daten erstellen.
 
-## 13. Spätere technische Erweiterungen
+## 14. TaskHost-Kompatibilität
+
+TaskHost Local bleibt im MVP eigenständig.
+
+Trotzdem sollen Benennung und Datenmodell spätere Integration nicht erschweren.
+
+Zu berücksichtigen sind:
+
+- TaskList,
+- TaskItem,
+- DueDate,
+- Priority,
+- Completed,
+- Description,
+- Starred,
+- SubTask,
+- Attachment,
+- Reminder,
+- SmartView.
+
+Nicht Teil des MVP:
+
+- API-Adapter,
+- Authentifizierung,
+- Token-Speicherung,
+- Sync-Status,
+- Konfliktlösung,
+- Remote-IDs.
+
+## 15. Spätere technische Erweiterungen
 
 Mögliche spätere Erweiterungen:
 
-- Tests für Services und Repositories
-- separate Core-/Data-Projekte
-- Export/Import im JSON-Format
-- TaskHost-kompatibles Datenformat
-- API-Adapter für TaskHost
-- Sync-Schicht
-- besseres Logging
-- Migrationen mit Schema-Versionierung
-- Avalonia-Client als spätere plattformübergreifende UI
+- Tests für Services und Repositories,
+- separate Core-/Data-Projekte,
+- Export/Import im JSON-Format,
+- TaskHost-kompatibles Datenformat,
+- API-Adapter für TaskHost,
+- Sync-Schicht,
+- besseres Logging,
+- Migrationen mit Schema-Versionierung,
+- Avalonia-Client als spätere plattformübergreifende UI,
+- Installer,
+- optionale Datenbankverschlüsselung.
 
-## 14. Technische Nicht-Ziele für V1
+## 16. Technische Nicht-Ziele für V1
 
 Nicht Bestandteil von V1:
 
-- Entity Framework
-- komplexes Dependency Injection Setup
-- Cloud-API
-- Authentifizierung
-- Hintergrunddienst
-- automatische Synchronisierung
-- Installer
-- Auto-Update
-- Plugin-System
-- Verschlüsselung der Datenbank
+- Entity Framework,
+- komplexes Dependency Injection Setup,
+- Cloud-API,
+- Authentifizierung,
+- Hintergrunddienst,
+- automatische Synchronisierung,
+- Installer,
+- Auto-Update,
+- Plugin-System,
+- Verschlüsselung der Datenbank,
+- TaskHost-API-Anbindung,
+- Telemetrie.
 
 Diese Punkte können später neu bewertet werden.
-

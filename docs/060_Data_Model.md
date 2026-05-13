@@ -1,22 +1,32 @@
 # TaskHost Local – Data Model
 
-**Dokumentstatus:** Arbeitsfassung  
+**Dokumentstatus:** Arbeitsfassung v0.2  
 **Stand:** 2026-05-13  
+**Bezug:** Lastenheft/Pflichtenheft MVP v0.2
 
 ## 1. Zweck des Dokuments
 
-Dieses Dokument beschreibt das lokale Datenmodell von **TaskHost Local**. Es dient als Grundlage für SQLite-Schema, Repository-Implementierung und spätere Erweiterungen.
+Dieses Dokument beschreibt das lokale Datenmodell von **TaskHost Local**.
+
+Es dient als Grundlage für:
+
+- SQLite-Schema,
+- Repository-Implementierung,
+- UI-Anzeigen,
+- spätere Erweiterungen,
+- mögliche TaskHost-Kompatibilität.
 
 ## 2. Modellierungsprinzipien
 
 Das Datenmodell soll:
 
-- einfach sein
-- lokal mit SQLite funktionieren
-- die MVP-Funktionen abdecken
-- später erweiterbar bleiben
-- begrifflich zur TaskHost-Produktfamilie passen
-- keine unnötige Cloud-/Multiuser-Komplexität enthalten
+- einfach sein,
+- lokal mit SQLite funktionieren,
+- die MVP-Funktionen abdecken,
+- später erweiterbar bleiben,
+- begrifflich zur TaskHost-Produktfamilie passen,
+- keine unnötige Cloud-/Multiuser-Komplexität enthalten,
+- keine spätere Migration unnötig erschweren.
 
 ## 3. MVP-Entitäten
 
@@ -27,19 +37,33 @@ Für das MVP genügen zwei Kernentitäten:
 
 Später können weitere Entitäten ergänzt werden.
 
+Nicht Teil des MVP:
+
+- `subtasks`,
+- `tags`,
+- `attachments`,
+- `reminders`,
+- `comments`,
+- `users`,
+- `sync_state`.
+
 ## 4. Tabelle `task_lists`
 
 ### 4.1 Zweck
 
-`task_lists` speichert benutzerdefinierte Aufgabenlisten.
+`task_lists` speichert echte Aufgabenlisten.
 
 Beispiele:
 
-- Eingang
-- Arbeit
-- Privat
-- SASD
-- Einkaufsliste
+- Eingang,
+- Arbeit,
+- Privat,
+- SASD,
+- Einkaufsliste.
+
+Wichtig:
+
+> „Eingang“ ist eine echte Liste und keine Smart View.
 
 ### 4.2 Felder
 
@@ -63,17 +87,31 @@ CREATE TABLE IF NOT EXISTS task_lists (
 );
 ```
 
-### 4.4 Hinweise
+### 4.4 Regeln
 
-- `name` sollte nicht leer sein.
-- Eine Standardliste „Eingang“ soll automatisch angelegt werden.
-- Eine spätere Erweiterung könnte ein Feld `is_system` für Systemlisten nutzen.
+- `name` darf nicht leer sein.
+- Eine Standardliste „Eingang“ wird automatisch angelegt.
+- Für V1 sollen Listen nur gelöscht werden dürfen, wenn sie keine Aufgaben enthalten.
+- Vor dem Löschen einer Liste ist eine Sicherheitsabfrage erforderlich.
+- `sort_order` ist für spätere Sortierung vorgesehen.
+
+### 4.5 Spätere Erweiterung
+
+Eine spätere Erweiterung könnte Systemlisten kenntlich machen:
+
+```sql
+ALTER TABLE task_lists ADD COLUMN is_system INTEGER NOT NULL DEFAULT 0;
+```
+
+Das ist für das MVP nicht erforderlich.
 
 ## 5. Tabelle `tasks`
 
 ### 5.1 Zweck
 
 `tasks` speichert die eigentlichen Aufgaben.
+
+Jede Aufgabe gehört im MVP genau zu einer echten Liste.
 
 ### 5.2 Felder
 
@@ -84,7 +122,7 @@ CREATE TABLE IF NOT EXISTS task_lists (
 | `title` | TEXT | ja | Aufgabentitel |
 | `description` | TEXT | nein | Notiz/Beschreibung |
 | `due_date` | TEXT | nein | Fälligkeitsdatum |
-| `priority` | INTEGER | ja | Priorität |
+| `priority` | INTEGER | ja | Priorität 0–3 |
 | `is_completed` | INTEGER | ja | 0 = offen, 1 = erledigt |
 | `created_at` | TEXT | ja | Erstellzeitpunkt |
 | `updated_at` | TEXT | ja | Änderungszeitpunkt |
@@ -108,41 +146,59 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 ```
 
-### 5.4 Priorität
+### 5.4 Regeln
+
+- `title` darf nicht leer sein.
+- `list_id` muss auf eine vorhandene Liste verweisen.
+- `priority` muss zwischen 0 und 3 liegen.
+- `is_completed` wird als `0` oder `1` gespeichert.
+- Beim Erledigen wird `completed_at` gesetzt.
+- Beim Wiederöffnen wird `completed_at` auf `NULL` gesetzt.
+- Aufgaben werden im MVP physisch gelöscht; ein Papierkorb ist nicht Teil des MVP.
+- Vor dem Löschen einer Aufgabe ist eine Sicherheitsabfrage erforderlich.
+
+## 6. Priorität
 
 Für das MVP wird Priorität als Integer gespeichert.
 
-Vorschlag:
-
 | Wert | Bedeutung |
 |---:|---|
-| 0 | keine / normal |
+| 0 | normal / keine besondere Priorität |
 | 1 | niedrig |
 | 2 | mittel |
 | 3 | hoch |
 
-Die UI kann daraus Texte wie „Niedrig“, „Mittel“, „Hoch“ ableiten.
+Die UI kann daraus Texte wie „Normal“, „Niedrig“, „Mittel“ und „Hoch“ ableiten.
 
-### 5.5 Datumsspeicherung
+Ungültige Werte sollen beim Speichern verhindert oder auf `0` zurückgesetzt werden.
+
+## 7. Datumsspeicherung
 
 Datumswerte werden als Text gespeichert.
 
+Für das MVP ist `due_date` als reines Fälligkeitsdatum zu verstehen.
+
 Empfehlung:
 
-- intern möglichst ISO-nah speichern
-- Anzeige lokalisiert formatieren
-- für reine Fälligkeit genügt Datum ohne Uhrzeit
+- intern ISO-nah speichern,
+- Anzeige lokalisiert formatieren,
+- für Fälligkeit zunächst Datum ohne Uhrzeit verwenden.
 
-Beispiele:
+Beispiel:
 
 ```text
 2026-05-13
+```
+
+Zeitpunkte wie `created_at`, `updated_at` und `completed_at` können Datum und Uhrzeit enthalten:
+
+```text
 2026-05-13T08:43:31
 ```
 
-Für das MVP reicht ein pragmatischer Ansatz. Wichtig ist, dass die Speicherung konsistent erfolgt.
+Wichtig ist, dass die Speicherung konsistent erfolgt.
 
-## 6. Beziehungen
+## 8. Beziehungen
 
 Eine Liste kann viele Aufgaben enthalten.
 
@@ -152,24 +208,53 @@ task_lists 1 ─── n tasks
 
 Eine Aufgabe gehört im MVP genau zu einer Liste.
 
-## 7. Smart Views
+## 9. Standardliste „Eingang“
 
-Smart Views wie „Heute“, „Woche“, „Favoriten“ oder „Erledigt“ müssen im MVP nicht zwingend als eigene Tabellen gespeichert werden.
+Beim ersten Start soll automatisch eine Standardliste angelegt werden:
 
-Sie können als gefilterte Ansichten über `tasks` umgesetzt werden.
+```text
+Eingang
+```
 
-Beispiele:
+Regeln:
 
-- Heute: `due_date = current date`
-- Woche: `due_date between week start and week end`
-- Erledigt: `is_completed = 1`
-- Offen: `is_completed = 0`
+- Die Liste wird nur angelegt, wenn noch keine passende Standardliste existiert.
+- Sie ist eine echte Liste in `task_lists`.
+- Neue Aufgaben ohne besondere Zuordnung können standardmäßig in „Eingang“ landen.
 
-Für Favoriten wird später ein Feld benötigt.
+## 10. Smart Views
 
-## 8. Geplante Erweiterungen
+Smart Views sind gefilterte Ansichten über `tasks`.
 
-### 8.1 Favoriten / Stern
+Sie werden **nicht** als Datensätze in `task_lists` gespeichert.
+
+Wichtige Smart Views:
+
+| Smart View | Bedeutung | Beispielbedingung |
+|---|---|---|
+| Alle Aufgaben | alle Aufgaben, optional ohne erledigte oder mit Gruppierung | keine Listenfilterung |
+| Heute | Aufgaben mit heutiger Fälligkeit | `due_date = current date` |
+| Überfällig | offene Aufgaben mit Fälligkeit vor heute | `due_date < current date AND is_completed = 0` |
+| Erledigt | abgeschlossene Aufgaben | `is_completed = 1` |
+| Woche | Aufgaben der aktuellen Woche | `due_date BETWEEN week_start AND week_end` |
+| Favoriten | markierte Aufgaben | benötigt später `is_starred = 1` |
+
+Für Favoriten wird eine Schema-Erweiterung benötigt.
+
+## 11. Suche
+
+Die Suche soll mindestens über folgende Felder laufen:
+
+- `title`,
+- `description`.
+
+Für das MVP genügt Suche innerhalb der aktuell ausgewählten echten Liste.
+
+Die Implementierung soll aber so geschrieben werden, dass globale Suche und Smart-View-Suche später nicht erschwert werden.
+
+## 12. Geplante Erweiterungen
+
+### 12.1 Favoriten / Stern
 
 Spätere Erweiterung:
 
@@ -177,7 +262,9 @@ Spätere Erweiterung:
 ALTER TABLE tasks ADD COLUMN is_starred INTEGER NOT NULL DEFAULT 0;
 ```
 
-### 8.2 Unteraufgaben
+Erst danach kann eine echte Favoriten-Smart-View umgesetzt werden.
+
+### 12.2 Unteraufgaben
 
 Mögliche Tabelle:
 
@@ -194,7 +281,7 @@ CREATE TABLE IF NOT EXISTS subtasks (
 );
 ```
 
-### 8.3 Tags
+### 12.3 Tags
 
 Mögliche Tabellen:
 
@@ -213,7 +300,7 @@ CREATE TABLE IF NOT EXISTS task_tags (
 );
 ```
 
-### 8.4 Anhänge
+### 12.4 Anhänge
 
 Mögliche Tabelle:
 
@@ -228,17 +315,21 @@ CREATE TABLE IF NOT EXISTS attachments (
 );
 ```
 
-### 8.5 Erinnerungen
+### 12.5 Erinnerungen
 
-Mögliche Erweiterung:
+Fälligkeitsdatum ist Teil des MVP.
+
+Aktive Erinnerungen sind nicht Teil des MVP.
+
+Mögliche spätere Erweiterung:
 
 ```sql
 ALTER TABLE tasks ADD COLUMN reminder_at TEXT NULL;
 ```
 
-Oder eigene Tabelle, wenn mehrere Erinnerungen pro Aufgabe unterstützt werden sollen.
+Oder eine eigene Tabelle, wenn mehrere Erinnerungen pro Aufgabe unterstützt werden sollen.
 
-## 9. Schema-Versionierung
+## 13. Schema-Versionierung
 
 Für das MVP kann zunächst ohne formale Migrationen gearbeitet werden.
 
@@ -253,51 +344,63 @@ CREATE TABLE IF NOT EXISTS schema_version (
 
 Damit können spätere Änderungen nachvollziehbar durchgeführt werden.
 
-## 10. TaskHost-Kompatibilität
+## 14. TaskHost-Kompatibilität
 
 Das lokale Datenmodell soll nicht zwangsläufig identisch mit TaskHost sein, aber kompatible Konzepte verwenden.
 
 Wichtige Kompatibilitätspunkte:
 
-- eindeutige Aufgaben-ID
-- Listen-ID
-- Titel
-- Beschreibung/Notiz
-- Fälligkeit
-- Erledigt-Status
-- Priorität
-- Favorit/Stern später
-- Zeitstempel
+- eindeutige Aufgaben-ID,
+- Listen-ID,
+- Titel,
+- Beschreibung/Notiz,
+- Fälligkeit,
+- Erledigt-Status,
+- Priorität,
+- Favorit/Stern später,
+- Zeitstempel.
 
 Für spätere Synchronisierung könnten zusätzliche Felder notwendig werden:
 
-- `uuid`
-- `remote_id`
-- `sync_status`
-- `last_synced_at`
-- `deleted_at`
-- `version`
+- `uuid`,
+- `remote_id`,
+- `sync_status`,
+- `last_synced_at`,
+- `deleted_at`,
+- `version`.
 
 Diese Felder gehören nicht ins MVP, sollten aber bei späteren Migrationen berücksichtigt werden.
 
-## 11. Datenschutzrelevante Daten
+## 15. Datenschutzrelevante Daten
 
 Aufgaben können private oder geschäftliche Informationen enthalten.
 
 Daher gilt:
 
-- Datenbankdateien nicht ins Git-Repository aufnehmen
-- Backups nicht ins Git-Repository aufnehmen
-- Beispiel- oder Testdaten nur anonymisiert verwenden
-- Screenshots für README nur mit fiktiven Daten erstellen
+- Datenbankdateien nicht ins Git-Repository aufnehmen,
+- Backups nicht ins Git-Repository aufnehmen,
+- Beispiel- oder Testdaten nur anonymisiert verwenden,
+- Screenshots für README nur mit fiktiven Daten erstellen.
 
-## 12. Offene Datenmodell-Fragen
+## 16. Bewusste Entscheidungen v0.2
 
-- Soll `due_date` nur Datum oder Datum+Uhrzeit enthalten?
-- Soll `priority` mit Integer oder Text gespeichert werden?
+| Frage | Entscheidung für MVP |
+|---|---|
+| Ist „Eingang“ eine Smart View? | Nein, echte Standardliste |
+| Sind Smart Views Tabellen? | Nein, gefilterte Abfragen |
+| Wird `priority` als Text gespeichert? | Nein, Integer 0–3 |
+| Enthält `due_date` Uhrzeit? | Für MVP als Datum ohne Uhrzeit geplant |
+| Gibt es Papierkorb/Soft Delete? | Nein, später möglich |
+| Gibt es Favoriten im MVP-Schema? | Nein, spätere Erweiterung |
+| Gibt es aktive Erinnerungen? | Nein, nur Fälligkeit |
+| Gibt es Sync-Felder? | Nein, später möglich |
+
+## 17. Offene Datenmodell-Fragen für spätere Versionen
+
+- Soll `due_date` später zusätzlich Uhrzeiten unterstützen?
 - Soll es ein `deleted_at` für Papierkorb geben?
 - Sollen Listen sortierbar sein?
 - Sollen Aufgaben innerhalb einer Liste sortierbar sein?
-- Soll Favorit bereits früh ins Schema?
+- Soll Favorit früh oder erst mit Smart Views eingeführt werden?
 - Wie wichtig ist UUID-Kompatibilität für spätere TaskHost-Synchronisierung?
-
+- Soll eine spätere Datenbankverschlüsselung unterstützt werden?

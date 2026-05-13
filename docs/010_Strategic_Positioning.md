@@ -1,30 +1,44 @@
 # TaskHost Local – Strategische Einordnung
 
-**Dokumentstatus:** Arbeitsfassung  
+**Dokumentstatus:** Arbeitsfassung v0.2  
 **Stand:** 2026-05-13  
+**Bezug:** TaskHost-Projektfamilie, Lastenheft/Pflichtenheft MVP v0.2
 
 ## 1. Zweck des Dokuments
 
-Dieses Dokument legt fest, wie **TaskHost Local** strategisch einzuordnen ist. Es beantwortet insbesondere folgende Fragen:
+Dieses Dokument legt fest, wie **TaskHost Local** strategisch einzuordnen ist.
+
+Es beantwortet insbesondere folgende Fragen:
 
 - Ist TaskHost Local ein eigenständiges Produkt?
 - Ist TaskHost Local der zukünftige Windows-Client von TaskHost?
 - Wird TaskHost Local sofort in TaskHost integriert?
 - Wie verhindern wir, dass zwei konkurrierende Aufgabenverwaltungen entstehen?
+- Welche Entscheidungen dürfen im Code-Chat getroffen werden und welche gehören in den Strategie-Chat?
 
 ## 2. Ausgangslage
 
-Es existiert bereits das Projekt **TaskHost**. Dieses Projekt soll langfristig als umfassendere Aufgabenverwaltungsplattform entwickelt werden. Der bestehende TaskHost-Ansatz geht eher in Richtung Web-/API-System und kann perspektivisch Funktionen wie Backend, Weboberfläche, spätere Synchronisierung, Benutzerverwaltung und Collaboration unterstützen.
+Es existiert bereits das Projekt **TaskHost**. Dieses Projekt soll langfristig als umfassendere Aufgabenverwaltungsplattform entwickelt werden.
+
+Der bestehende TaskHost-Ansatz geht eher in Richtung:
+
+- Web-/API-System,
+- Frontend und Backend,
+- serverbasierte Datenhaltung,
+- Authentifizierung,
+- mögliche Synchronisierung,
+- mögliche Benutzerverwaltung,
+- mögliche Collaboration.
 
 Der aktuelle praktische Bedarf ist jedoch kurzfristiger:
 
-- lokale Aufgabenverwaltung
-- Windows-Desktop-App
-- sofort benutzbar
-- keine Cloud
-- keine Synchronisierung
-- keine Benutzerverwaltung
-- keine komplexe Serverinfrastruktur
+- lokale Aufgabenverwaltung,
+- Windows-Desktop-App,
+- sofort benutzbar,
+- keine Cloud,
+- keine Synchronisierung,
+- keine Benutzerverwaltung,
+- keine komplexe Serverinfrastruktur.
 
 Die Sorge besteht darin, dass TaskHost zwar strategisch wichtig ist, aber zu lange braucht, bis er im Alltag wirklich nutzbar wird.
 
@@ -34,7 +48,12 @@ TaskHost Local wird als **eigenständiges lokales Desktop-Projekt** entwickelt, 
 
 Die Leitentscheidung lautet:
 
-> **TaskHost Local ist die kurzfristig nutzbare lokale Windows-Variante der TaskHost-Idee. Es wird zunächst eigenständig entwickelt, soll aber langfristig als möglicher Desktop-Client oder Offline-Client von TaskHost vorbereitet bleiben.**
+> **TaskHost Local ist die kurzfristig nutzbare lokale Windows-Variante der TaskHost-Idee. Es wird zunächst eigenständig entwickelt, soll aber langfristig als möglicher Desktop- oder Offline-Client von TaskHost vorbereitet bleiben.**
+
+Diese Entscheidung ist bewusst zweistufig:
+
+1. **Jetzt:** schnelle lokale Nutzbarkeit.
+2. **Später:** mögliche Integration in die TaskHost-Produktfamilie.
 
 ## 4. Verhältnis zu TaskHost
 
@@ -44,25 +63,36 @@ TaskHost bleibt das langfristige Hauptprojekt.
 
 TaskHost steht perspektivisch für:
 
-- Web-App
-- REST-API
-- serverbasierte Datenhaltung
-- mögliche Synchronisierung
-- mögliche Zusammenarbeit mehrerer Benutzer
-- mögliche Nutzung über verschiedene Geräte
-- langfristige Produktplattform
+- Web-App,
+- REST-API,
+- serverbasierte Datenhaltung,
+- mögliche Synchronisierung,
+- mögliche Zusammenarbeit mehrerer Benutzer,
+- mögliche Nutzung über verschiedene Geräte,
+- langfristige Produktplattform.
 
 ### 4.2 TaskHost Local
 
 TaskHost Local steht kurzfristig für:
 
-- lokale Windows-App
-- einfache Aufgabenverwaltung
-- SQLite-Datenbank
-- keine Cloud-Abhängigkeit
-- keine Anmeldung
-- schnelle Nutzbarkeit
-- Interims- und Produktivwerkzeug für den lokalen Alltag
+- lokale Windows-App,
+- einfache Aufgabenverwaltung,
+- SQLite-Datenbank,
+- keine Cloud-Abhängigkeit,
+- keine Anmeldung,
+- schnelle Nutzbarkeit,
+- Interims- und Produktivwerkzeug für den lokalen Alltag.
+
+### 4.3 Keine Konkurrenz
+
+TaskHost Local soll nicht als zweites, konkurrierendes Hauptprodukt entstehen.
+
+Es ist sinnvoller, die Rollen klar zu trennen:
+
+| Projekt | Rolle |
+|---|---|
+| TaskHost | langfristige Plattform / Web-/API-System |
+| TaskHost Local | kurzfristige lokale Desktop-App / möglicher späterer Client |
 
 ## 5. Warum keine sofortige Integration?
 
@@ -92,17 +122,17 @@ Auch wenn TaskHost Local zuerst eigenständig ist, soll es nicht in eine völlig
 
 Deshalb sollen Begriffe und Datenstrukturen so gewählt werden, dass sie später zu TaskHost passen:
 
-- Liste / TaskList
-- Aufgabe / TaskItem
-- Notiz / Note oder Description
-- Fälligkeit / DueDate
-- Priorität / Priority
-- Favorit / Starred
-- Erledigt / Completed
-- Unteraufgabe / SubTask
-- Anhang / Attachment
-- Erinnerung / Reminder
-- intelligente Ansicht / SmartView
+- Liste / TaskList,
+- Aufgabe / TaskItem,
+- Notiz / Note oder Description,
+- Fälligkeit / DueDate,
+- Priorität / Priority,
+- Favorit / Starred,
+- Erledigt / Completed,
+- Unteraufgabe / SubTask,
+- Anhang / Attachment,
+- Erinnerung / Reminder,
+- intelligente Ansicht / SmartView.
 
 So bleibt eine spätere Migration, ein Import/Export oder eine API-Anbindung möglich.
 
@@ -123,7 +153,7 @@ Das bedeutet:
 
 ## 8. Name des Projekts
 
-Der empfohlene Name lautet:
+Der empfohlene Produktname lautet:
 
 > **TaskHost Local**
 
@@ -145,12 +175,12 @@ TaskHost Local darf sich funktional an bewährten Aufgabenverwaltungs-Apps orien
 
 Daher gilt:
 
-- kein Markenname fremder Produkte im Projektnamen
-- keine fremden Logos
-- keine kopierten Icons
-- kein 1:1 Nachbau geschützter UI-Elemente
-- keine irreführende Beschreibung als offizieller Nachfolger
-- eigene Farbwelt und eigene Screenshots
+- kein Markenname fremder Produkte im Projektnamen,
+- keine fremden Logos,
+- keine kopierten Icons,
+- kein 1:1 Nachbau geschützter UI-Elemente,
+- keine irreführende Beschreibung als offizieller Nachfolger,
+- eigene Farbwelt und eigene Screenshots.
 
 Formulierungen wie „inspiriert von klassischen Aufgabenlisten-Anwendungen“ sind besser als „Wunderlist-Klon“.
 
@@ -160,11 +190,11 @@ TaskHost Local bleibt zunächst in einem eigenen Repository.
 
 Vorteile:
 
-- geringere Komplexität
-- klarer Projektfokus
-- unabhängige Builds
-- keine Vermischung mit PHP-/JavaScript-Websystemen
-- einfacher für schnelle Experimente
+- geringere Komplexität,
+- klarer Projektfokus,
+- unabhängige Builds,
+- keine Vermischung mit PHP-/JavaScript-Websystemen,
+- einfacher für schnelle Experimente.
 
 Eine spätere Integration ist möglich, z. B. als:
 
@@ -179,9 +209,49 @@ TaskHost/
 
 Diese Integration sollte aber erst erfolgen, wenn TaskHost Local stabil genug ist.
 
-## 11. Langfristiges Zielbild
+## 11. Arbeitsteilung zwischen Strategie- und Code-Chat
 
-Langfristig sind drei Wege denkbar:
+Für die weitere Projektarbeit wird folgende Arbeitsteilung festgelegt:
+
+### Strategie-Chat
+
+- Produkt-/Projekt-Richtung,
+- Verhältnis TaskHost Local ↔ TaskHost,
+- Roadmap,
+- Feature-Priorisierung,
+- Dokumentation,
+- UI-/UX-Grundsatzentscheidungen,
+- Datenmodell-Entscheidungen mit Langzeitwirkung,
+- Architekturentscheidungen.
+
+### Code-Chat
+
+- Build-Fehler,
+- SQLite-Fehler,
+- konkrete Codeänderungen,
+- kleine Bugfixes,
+- kleinere UI-Reparaturen,
+- Commit-Vorschläge,
+- Tests nach Codeänderungen.
+
+### Eskalationsregel
+
+Der Code-Chat darf kleine Fehler direkt beheben.
+
+Größere Richtungsentscheidungen kommen zuerst in den Strategie-Chat zurück, insbesondere:
+
+- neue Tabellen,
+- stark verändertes Datenmodell,
+- API-/Sync-Anbindung,
+- Entity Framework,
+- Projektstruktur-Aufteilung,
+- Produktname,
+- strategische UI-Umstellung,
+- TaskHost-Integration.
+
+## 12. Langfristiges Zielbild
+
+Langfristig sind drei Wege denkbar.
 
 ### Variante A: TaskHost Local bleibt eigenständig
 
@@ -197,7 +267,7 @@ TaskHost Local bleibt die schnelle Offline-Edition. Ein späterer moderner Deskt
 
 Die aktuelle Architektur soll alle drei Varianten offenhalten.
 
-## 12. Aktuelle Empfehlung
+## 13. Aktuelle Empfehlung
 
 Die aktuelle Empfehlung lautet:
 
@@ -205,6 +275,6 @@ Die aktuelle Empfehlung lautet:
 2. V1 auf lokale Nutzbarkeit konzentrieren.
 3. TaskHost-Kompatibilität begrifflich und strukturell berücksichtigen.
 4. Keine Cloud-/Sync-/API-Komplexität in V1 aufnehmen.
-5. UI so entwickeln, dass sie später näher an ein modernes Aufgabenlisten-Layout gebracht werden kann.
-6. Bekannte Fehler dokumentieren und gezielt beheben.
-
+5. Keine Netzwerkkommunikation und keine Telemetrie im MVP.
+6. UI so entwickeln, dass sie später näher an ein modernes Aufgabenlisten-Layout gebracht werden kann.
+7. Bekannte Fehler dokumentieren und gezielt beheben.

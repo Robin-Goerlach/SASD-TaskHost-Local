@@ -26,7 +26,7 @@ public sealed class TaskRepository
     {
         using var connection = _connectionFactory.CreateOpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = BaseSelectSql + """
+        command.CommandText = BaseSelectSql + Environment.NewLine + """
             WHERE list_id = $listId
             ORDER BY is_completed, due_date IS NULL, due_date, priority DESC, updated_at DESC;
             """;
@@ -41,9 +41,9 @@ public sealed class TaskRepository
     {
         using var connection = _connectionFactory.CreateOpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = BaseSelectSql + """
+        command.CommandText = BaseSelectSql + Environment.NewLine + """
             WHERE title LIKE $pattern
-               OR COALESCE(description, '') LIKE $pattern
+            OR COALESCE(description, '') LIKE $pattern
             ORDER BY is_completed, due_date IS NULL, due_date, priority DESC, updated_at DESC;
             """;
         command.Parameters.AddWithValue("$pattern", $"%{searchText.Trim()}%");
