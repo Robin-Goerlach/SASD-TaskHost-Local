@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- WinExe verhindert, dass beim Start zusätzlich ein Konsolenfenster erscheint. -->
+    <OutputType>WinExe</OutputType>
+
+    <!-- Für diese schnelle Windows-Interims-Version verwenden wir .NET 8 mit Windows Forms. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <!-- Nullable Reference Types helfen, typische Null-Fehler früh zu erkennen. -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Erleichtert Restore/Build-Skripte auf CI-/Nicht-Windows-Systemen; ausgeführt wird die App unter Windows. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Schlanker SQLite-Zugriff ohne Entity Framework. Für V1 ist direktes SQL einfacher und transparenter. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+  </ItemGroup>
+</Project>
